@@ -3,18 +3,22 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { Command } from "commander";
 import { formatAuditReport } from "./audit.js";
+import { diffEnvRevisions, formatEnvDiff } from "./diff.js";
 import { exportTimelines, type ExportFormat } from "./exporter.js";
-import { getEnvHistory } from "./git.js";
+import { getEnvHistory, getEnvPatchHistory } from "./git.js";
 import { formatAllVariables, formatVariableTimeline } from "./formatter.js";
 import { parseEnvFile } from "./parser.js";
+import { buildSecretFindings, formatSecretsCheckReport } from "./secrets-check.js";
 import { buildVariableTimelines } from "./timeline.js";
 
 type CliOptions = {
   all?: boolean;
   audit?: boolean;
+  diff?: string[];
   export?: ExportFormat;
   file: string;
   json?: boolean;
+  secretsCheck?: boolean;
   zombies?: boolean;
   since?: string;
 };
@@ -63,18 +67,46 @@ program
   .argument("[variable]", "Specific variable to trace")
   .option("--all", "Show all variables")
   .option("--audit", "Audit git history for likely secrets")
+  .option("--diff <commits...>", "Show exact env changes between two commits")
   .option("--export <format>", "Export timeline as json, csv, or markdown")
   .option("--file <path>", "Env file to track", ".env")
   .option("--json", "Output as JSON")
+  .option("--secrets-check", "Scan git history for accidentally committed secret values")
   .option("--zombies", "Only show removed variables")
   .option("--since <date>", "Only changes since date (YYYY-MM-DD)")
   .action(async (variable: string | undefined, options: CliOptions) => {
+    if (options.diff && options.diff.length !== 2) {
+      throw new Error("--diff requires exactly two commit references");
+    }
+
     if (options.json && options.export) {
       throw new Error("Use either --json or --export, not both");
     }
 
+    if (options.diff && (variable || options.all || options.audit || options.export || options.json || options.zombies || options.since || options.secretsCheck)) {
+      throw new Error("--diff cannot be combined with other output modes");
+    }
+
+    if (options.secretsCheck && (variable || options.all || options.audit || options.export || options.json || options.zombies || options.since)) {
+      throw new Error("--secrets-check cannot be combined with timeline output modes");
+    }
+
     if (options.export && !["json", "csv", "markdown"].includes(options.export)) {
       throw new Error("Invalid export format. Use json, csv, or markdown");
+    }
+
+    if (options.diff) {
+      const [fromRef, toRef] = options.diff;
+      const result = await diffEnvRevisions(fromRef, toRef, options.file);
+      console.log(formatEnvDiff(result));
+      return;
+    }
+
+    if (options.secretsCheck) {
+      const commits = await getEnvPatchHistory();
+      const findings = buildSecretFindings(commits);
+      console.log(formatSecretsCheckReport(findings, commits.length));
+      return;
     }
 
     const trackedFile = resolve(process.cwd(), options.file);

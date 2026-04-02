@@ -20,9 +20,11 @@ Options:
 
 - `--all` Show all variables. This is the default when no variable is provided.
 - `--audit` Audit `.env` history for likely secret variables left in git history.
+- `--diff <commit1> <commit2>` Show exact env changes between two commits.
 - `--export <format>` Export timelines as `json`, `csv`, or `markdown`.
 - `--file <path>` Track a specific env file. Defaults to `.env`.
 - `--json` Emit JSON instead of colored terminal output.
+- `--secrets-check` Scan git history for accidentally committed secret values.
 - `--zombies` Only show removed variables.
 - `--since <date>` Only include changes on or after `YYYY-MM-DD`.
 
@@ -32,8 +34,10 @@ Examples:
 env-time-travel DB_HOST
 env-time-travel --all
 env-time-travel --audit
+env-time-travel --diff HEAD~5 HEAD
 env-time-travel --all --export json
 env-time-travel DB_HOST --export markdown
+env-time-travel --secrets-check
 env-time-travel --zombies --since 2024-01-01
 env-time-travel API_URL --json
 ```
