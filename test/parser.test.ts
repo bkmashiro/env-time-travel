@@ -18,6 +18,16 @@ test("ignores comments and empty lines", () => {
   assert.equal(parsed.get("KEY"), "value");
 });
 
+test("supports export syntax and single-quoted values", () => {
+  const parsed = parseEnvFile("export API_TOKEN='secret value'");
+  assert.equal(parsed.get("API_TOKEN"), "secret value");
+});
+
+test("ignores invalid env assignment lines", () => {
+  const parsed = parseEnvFile("NOT VALID\n1KEY=value\nKEY");
+  assert.equal(parsed.size, 0);
+});
+
 test("parses diff hunk add event", () => {
   const changes = parseEnvDiffHunk("+DB_HOST=localhost");
   assert.deepEqual(changes, [{ type: "add", key: "DB_HOST", value: "localhost" }]);
@@ -28,5 +38,23 @@ test("parses diff hunk change event lines", () => {
   assert.deepEqual(changes, [
     { type: "remove", key: "DB_HOST", value: "localhost" },
     { type: "add", key: "DB_HOST", value: "prod" }
+  ]);
+});
+
+test("ignores diff headers, context lines, and invalid assignments", () => {
+  const changes = parseEnvDiffHunk(
+    [
+      "--- a/.env",
+      "+++ b/.env",
+      "@@ -1,2 +1,3 @@",
+      " DB_HOST=staging",
+      "+NOT VALID",
+      "-# comment",
+      "+API_URL=https://example.test"
+    ].join("\n")
+  );
+
+  assert.deepEqual(changes, [
+    { type: "add", key: "API_URL", value: "https://example.test" }
   ]);
 });

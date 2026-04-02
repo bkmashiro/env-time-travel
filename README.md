@@ -1,3 +1,5 @@
+[![npm](https://img.shields.io/npm/v/env-time-travel)](https://www.npmjs.com/package/env-time-travel) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # env-time-travel
 
 `env-time-travel` is a CLI for tracing `.env` variables through git history. It shows who added a variable, when it changed, when it disappeared, and whether it still exists today.
