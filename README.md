@@ -19,6 +19,8 @@ env-time-travel [variable] [options]
 Options:
 
 - `--all` Show all variables. This is the default when no variable is provided.
+- `--audit` Audit `.env` history for likely secret variables left in git history.
+- `--export <format>` Export timelines as `json`, `csv`, or `markdown`.
 - `--file <path>` Track a specific env file. Defaults to `.env`.
 - `--json` Emit JSON instead of colored terminal output.
 - `--zombies` Only show removed variables.
@@ -29,6 +31,9 @@ Examples:
 ```bash
 env-time-travel DB_HOST
 env-time-travel --all
+env-time-travel --audit
+env-time-travel --all --export json
+env-time-travel DB_HOST --export markdown
 env-time-travel --zombies --since 2024-01-01
 env-time-travel API_URL --json
 ```

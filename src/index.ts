@@ -2,6 +2,8 @@
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { Command } from "commander";
+import { formatAuditReport } from "./audit.js";
+import { exportTimelines, type ExportFormat } from "./exporter.js";
 import { getEnvHistory } from "./git.js";
 import { formatAllVariables, formatVariableTimeline } from "./formatter.js";
 import { parseEnvFile } from "./parser.js";
@@ -9,6 +11,8 @@ import { buildVariableTimelines } from "./timeline.js";
 
 type CliOptions = {
   all?: boolean;
+  audit?: boolean;
+  export?: ExportFormat;
   file: string;
   json?: boolean;
   zombies?: boolean;
@@ -58,11 +62,21 @@ program
   .description("Show git history for .env variables")
   .argument("[variable]", "Specific variable to trace")
   .option("--all", "Show all variables")
+  .option("--audit", "Audit git history for likely secrets")
+  .option("--export <format>", "Export timeline as json, csv, or markdown")
   .option("--file <path>", "Env file to track", ".env")
   .option("--json", "Output as JSON")
   .option("--zombies", "Only show removed variables")
   .option("--since <date>", "Only changes since date (YYYY-MM-DD)")
   .action(async (variable: string | undefined, options: CliOptions) => {
+    if (options.json && options.export) {
+      throw new Error("Use either --json or --export, not both");
+    }
+
+    if (options.export && !["json", "csv", "markdown"].includes(options.export)) {
+      throw new Error("Invalid export format. Use json, csv, or markdown");
+    }
+
     const trackedFile = resolve(process.cwd(), options.file);
     const commits = await getEnvHistory(options.file);
     const currentEnv = await readEnvMap(trackedFile);
@@ -74,10 +88,20 @@ program
       timelines = timelines.filter((timeline) => timeline.status === "removed");
     }
 
+    if (options.audit) {
+      console.log(formatAuditReport(timelines));
+      return;
+    }
+
     if (variable && !options.all) {
       const timeline = timelinesMap.get(variable);
       if (!timeline) {
         throw new Error(`No history found for variable: ${variable}`);
+      }
+
+      if (options.export) {
+        console.log(exportTimelines([timeline], options.export));
+        return;
       }
 
       if (options.json) {
@@ -86,6 +110,11 @@ program
       }
 
       console.log(formatVariableTimeline(timeline));
+      return;
+    }
+
+    if (options.export) {
+      console.log(exportTimelines(timelines, options.export));
       return;
     }
 

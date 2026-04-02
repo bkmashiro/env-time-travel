@@ -24,6 +24,28 @@ export type VariableTimeline = {
   lastChanged?: string;
 };
 
+export type VariableTimelineExport = {
+  variable: string;
+  timeline: Array<{
+    date: string;
+    author: string;
+    type: TimelineAction;
+    value?: string;
+  }>;
+};
+
+export function serializeTimeline(timeline: VariableTimeline): VariableTimelineExport {
+  return {
+    variable: timeline.key,
+    timeline: timeline.entries.map((entry) => ({
+      date: entry.date,
+      author: entry.authorName,
+      type: entry.action,
+      value: entry.value
+    }))
+  };
+}
+
 function groupByKey(changes: EnvChange[]): Map<string, { adds: string[]; removes: string[] }> {
   const grouped = new Map<string, { adds: string[]; removes: string[] }>();
 
