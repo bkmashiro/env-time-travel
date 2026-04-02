@@ -9,14 +9,13 @@
     ],
     "declaration": true,
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "src",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
   "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "dist",
