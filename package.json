@@ -1,6 +1,6 @@
 {
   "name": "env-time-travel",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "CLI for tracing .env variable history through git",
   "type": "module",
   "bin": {
